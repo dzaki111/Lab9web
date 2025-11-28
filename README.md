@@ -11,6 +11,8 @@ Project ini mengimplementasikan konsep Modularisasi dan Routing dalam PHP, mengu
 ![WhatsApp Image 2025-11-27 at 22 20 50_889eff33](https://github.com/user-attachments/assets/4ba32e89-4ba3-473b-9946-3fa389b0db03)
 
 
+
+
 ## 1\. Koneksi Database
 
 Langkah pertama dalam modularisasi adalah menyusun *file* ke dalam direktori yang logis (`config`, `views`, `modules`, `assets`) dan mengonsolidasikan pengaturan koneksi. File **`config/database.php`** bertanggung jawab untuk menyimpan variabel koneksi (*host*, *user*, *pass*, *db*) dan memastikan koneksi ke *database* **latihan2** berhasil, sementara *router* utama (`index.php`) akan memuatnya pada awal eksekusi program.
@@ -101,82 +103,9 @@ if (file_exists($module_path)) {
 
 -----
 
-## 3\. Modul Otentikasi (`auth/login.php` & `auth/logout.php`)
+## 3\. Komponen Tampilan (Views)
 
-Modul Login (**`modules/auth/login.php`**) berfungsi menampilkan *form* dan memproses data *username* dan *password* dari *user*. Setelah berhasil login (dengan user: **admin** dan *password*: **admin123**), *session* akan dibuat (`$_SESSION['is_login'] = true`), dan *user* diarahkan ke halaman utama. Sebaliknya, modul Logout (**`modules/auth/logout.php`**) bertugas menghapus semua data *session* dan mengarahkan *user* kembali ke halaman *login*, efektif mengakhiri sesi.
-
-### 🔑 `modules/auth/login.php`
-
-```php
-<?php
-// modules/auth/login.php
-
-// Cek jika user sudah login, arahkan ke halaman utama
-if (isset($_SESSION['is_login'])) {
-    header('location: index.php');
-    exit;
-}
-
-$error = '';
-
-if (isset($_POST['submit'])) {
-    $username = mysqli_real_escape_string($conn, $_POST['username']);
-    $password = $_POST['password']; 
-
-    // Query untuk mencari user
-    $sql = "SELECT * FROM user WHERE username = '{$username}' LIMIT 1";
-    $result = mysqli_query($conn, $sql);
-
-    if ($result && mysqli_num_rows($result) > 0) {
-        $user = mysqli_fetch_assoc($result);
-        
-        // Cek password (DEMO: Cek teks biasa 'admin123')
-        if ($password === 'admin123' && $user['username'] === 'admin') { 
-            session_start();
-            $_SESSION['is_login'] = true; 
-            $_SESSION['user_id'] = $user['id_user'];
-            $_SESSION['username'] = $user['username'];
-
-            header('location: index.php');
-            exit;
-        } else {
-            $error = 'Username atau password salah.';
-        }
-    } else {
-        $error = 'Username tidak ditemukan.';
-    }
-}
-?>
-
-<h1 style="text-align: center;">Login Administrator</h1>
-
-<form method="post" action="index.php?page=auth/login">
-    <?php if ($error): ?>
-        <p style="color: var(--danger-color); text-align: center; margin-bottom: 20px; border: 1px solid var(--danger-color); padding: 10px; border-radius: 5px;"><?= htmlspecialchars($error); ?></p>
-    <?php endif; ?>
-    <div class="input">
-        <label>Username</label>
-        <input type="text" name="username" required/>
-    </div>
-    <div class="input">
-        <label>Password</label>
-        <input type="password" name="password" required/>
-    </div>
-    <div class="submit">
-        <input type="submit" name="submit" value="Login" />
-    </div>
-</form>
-
-<p style="text-align: center; margin-top: 20px;">
-    *Untuk demo: Username: admin, Password: admin123
-</p>
-```
-
------
-
-## 4\. Tampilan dan Navigasi (`views/header.php`)
-
-*File* **`views/header.php`** tidak hanya memuat *link* ke *stylesheet* (`assets/css/style.css`), tetapi kini juga memegang peran penting dalam menampilkan tampilan visual dan navigasi utama. Bagian ini bertanggung jawab untuk menampilkan kotak judul biru **"Data Barang (Modular)"** dan secara dinamis menampilkan pesan sambutan **"Selamat datang, [Username]\!"** serta tombol **Logout** atau **Login** berdasarkan status sesi *user*.
+Komponen *Views* (**`views/header.php`** dan **`views/footer.php`**) berfungsi sebagai *template* tampilan yang dibagikan oleh semua modul. **`header.php`** menampung tag `<head>`, *link* CSS, struktur awal HTML, *header* visual (kotak biru), dan logika navigasi Login/Logout. Sementara itu, **`footer.php`** menutup tag HTML yang terbuka dan berisi informasi hak cipta. Pemisahan ini memastikan konsistensi tampilan di seluruh aplikasi.
 
 ### 📄 `views/header.php`
 
@@ -221,7 +150,343 @@ $title = $title ?? 'Aplikasi Data Barang';
         <div class="main">
 ```
 
+### 📄 `views/footer.php`
+
+```php
+<?php
+// views/footer.php
+?>
+        </div>
+        <footer>
+            <p style="text-align: center; margin-top: 20px;">&copy; 2025, Modularisasi PHP - Lab 9</p>
+        </footer>
+    </div>
+</body>
+</html>
+```
+
 -----
+
+## 4\. Modul Data Barang (`modules/data_barang/`)
+
+Modul ini menampung semua logika CRUD (Create, Read, Update, Delete) yang sebelumnya tersebar di `index.php`, `tambah.php`, `ubah.php`, dan `hapus.php`. Semua modul ini kini menggunakan variabel koneksi global (`$conn`) yang dimuat oleh `index.php` dan semua *link* diarahkan menggunakan skema *routing* (`index.php?page=module/action`).
+
+### 📄 `modules/data_barang/list.php` (Read)
+
+```php
+<?php
+// modules/data_barang/list.php (Menampilkan data)
+
+$sql  = 'SELECT * FROM data_barang ORDER BY id_barang DESC'; 
+$result  = mysqli_query($conn, $sql); 
+?>
+
+<table>
+    <tr>
+        <th>Gambar</th>
+        <th>Nama Barang</th>
+        <th>Kategori</th>
+        <th>Harga Jual</th>
+        <th>Harga Beli</th>
+        <th>Stok</th>
+        <th>Aksi</th>
+    </tr>
+    <?php if($result && mysqli_num_rows($result) > 0): ?>
+    <?php while($row = mysqli_fetch_array($result)): ?>
+    <tr>
+        <td>
+            <?php if ($row['gambar']): ?>
+                <img src="assets/gambar/<?= htmlspecialchars($row['gambar']);?>" alt="<?= htmlspecialchars($row['nama']);?>">
+            <?php else: ?>
+                Tidak Ada Gambar
+            <?php endif; ?>
+        </td> 
+        
+        <td><?= htmlspecialchars($row['nama']);?></td>
+        <td><?= htmlspecialchars($row['kategori']);?></td>
+        <td><?= htmlspecialchars($row['harga_jual']);?></td>
+        <td><?= htmlspecialchars($row['harga_beli']);?></td>
+        <td><?= htmlspecialchars($row['stok']);?></td>
+        <td>
+            <a href="index.php?page=data_barang/edit&id=<?= $row['id_barang'];?>">Ubah</a> 
+            
+            <a href="index.php?page=data_barang/delete&id=<?= $row['id_barang'];?>" onclick="return confirm('Yakin akan menghapus data ini?')">Hapus</a>
+        </td>
+    </tr>
+    <?php endwhile; else: ?>
+    <tr>
+        <td colspan="7">Belum ada data di database.</td>
+    </tr>
+    <?php endif; ?>
+</table>
+```
+
+### 📄 `modules/data_barang/add.php` (Create)
+
+```php
+<?php
+// modules/data_barang/add.php (Menambah data)
+
+function redirect_list() {
+    header('location: index.php?page=data_barang/list'); 
+    exit;
+}
+
+if (isset($_POST['submit']))
+{
+    // ... (Logika pengambilan data form) ...
+    $nama = mysqli_real_escape_string($conn, $_POST['nama']);
+    $kategori = mysqli_real_escape_string($conn, $_POST['kategori']);
+    $harga_jual = mysqli_real_escape_string($conn, $_POST['harga_jual']);
+    $harga_beli = mysqli_real_escape_string($conn, $_POST['harga_beli']);
+    $stok = mysqli_real_escape_string($conn, $_POST['stok']);
+    $file_gambar = $_FILES['file_gambar'];
+    $gambar  = null;
+
+    // Proses upload gambar
+    if ($file_gambar ['error'] == 0) 
+    {
+        $filename  = str_replace(' ', '_', $file_gambar ['name']);
+        // Path upload disesuaikan ke folder assets/gambar/ dari root project
+        $destination = dirname(dirname(dirname(__FILE__))) . '/assets/gambar/' . $filename; 
+
+        if(move_uploaded_file($file_gambar ['tmp_name'], $destination)) 
+        {
+            $gambar = $filename;
+        }
+    }
+    
+    // Query INSERT
+    $sql = "INSERT INTO data_barang (nama, kategori, harga_jual, harga_beli, stok, gambar) 
+            VALUES ('{$nama}', '{$kategori}', '{$harga_jual}', '{$harga_beli}', '{$stok}', '{$gambar}')";
+    
+    $result  = mysqli_query($conn, $sql);
+    
+    if ($result) {
+        redirect_list(); 
+    } else {
+        echo "Gagal menyimpan data: " . mysqli_error($conn);
+    }
+}
+?>
+
+<h1 style="text-align: center;">Tambah Barang</h1>
+<form method="post" action="index.php?page=data_barang/add" enctype="multipart/form-data">
+    <div class="input">
+        <label>Nama Barang</label>
+        <input type="text" name="nama" required/>
+    </div>
+    <div class="input">
+        <label>Kategori</label>
+        <select name="kategori" required>
+            <option value="">-- Pilih Kategori --</option>
+            <option value="Komputer">Komputer</option>
+            <option value="Elektronik">Elektronik</option>
+            <option value="Hand Phone">Hand Phone</option>
+        </select>
+    </div>
+    <div class="input">
+        <label>Harga Jual</label>
+        <input type="number" name="harga_jual" required/>
+    </div>
+    <div class="input">
+        <label>Harga Beli</label>
+        <input type="number" name="harga_beli" required/>
+    </div>
+    <div class="input">
+        <label>Stok</label>
+        <input type="number" name="stok" required/>
+    </div>
+    <div class="input">
+        <label>File Gambar</label>
+        <input type="file" name="file_gambar" />
+    </div>
+    <div class="submit">
+        <input type="submit" name="submit" value="Simpan" />
+    </div>
+</form>
+```
+
+### 📄 `modules/data_barang/edit.php` (Update)
+
+```php
+<?php
+// modules/data_barang/edit.php (Mengubah data)
+
+function is_select($val, $var) {
+    if ($var == $val) return 'selected="selected"';
+    return '';
+}
+
+function redirect_list() {
+    header('location: index.php?page=data_barang/list'); 
+    exit;
+}
+
+// 1. Logika Pemrosesan Form UPDATE saat di-submit
+if (isset($_POST['submit']))
+{
+    // ... (Logika pengambilan data form dan upload gambar) ...
+    $id = mysqli_real_escape_string($conn, $_POST['id']);
+    $nama = mysqli_real_escape_string($conn, $_POST['nama']);
+    $kategori = mysqli_real_escape_string($conn, $_POST['kategori']);
+    $harga_jual = mysqli_real_escape_string($conn, $_POST['harga_jual']);
+    $harga_beli = mysqli_real_escape_string($conn, $_POST['harga_beli']);
+    $stok = mysqli_real_escape_string($conn, $_POST['stok']);
+    $file_gambar = $_FILES['file_gambar'];
+    $gambar  = null;
+
+    // Proses upload gambar baru (jika ada)
+    if ($file_gambar ['error'] == 0)
+    {
+        $filename  = str_replace(' ', '_', $file_gambar['name']);
+        $destination = dirname(dirname(dirname(__FILE__))) . '/assets/gambar/' . $filename;
+
+        if (move_uploaded_file($file_gambar['tmp_name'], $destination))
+        {
+            $gambar = $filename; 
+        }
+    }
+    
+    // Query UPDATE
+    $sql = 'UPDATE data_barang SET ';
+    $sql.= "nama = '{$nama}', kategori = '{$kategori}', ";
+    $sql.= "harga_jual = '{$harga_jual}', harga_beli = '{$harga_beli}', stok = '{$stok}' ";
+    
+    if (!empty($gambar)) 
+    {
+        $sql.=", gambar = '{$gambar}' ";
+    }
+    
+    $sql.= "WHERE id_barang = '{$id}'"; 
+    
+    $result  = mysqli_query($conn, $sql);
+    
+    if ($result) {
+        redirect_list();
+    } else {
+        echo "Gagal memperbarui data: " . mysqli_error($conn);
+    }
+}
+
+// 2. Logika Pengambilan Data untuk ditampilkan di form
+if (!isset($_GET['id'])) {
+    redirect_list();
+}
+$id = mysqli_real_escape_string($conn, $_GET['id']);
+$sql = "SELECT * FROM data_barang WHERE id_barang = '{$id}'";
+$result  = mysqli_query($conn, $sql);
+
+if (!$result || mysqli_num_rows($result) == 0) {
+    die('Error: Data tidak ditemukan.');
+}
+$data  = mysqli_fetch_array($result);
+
+?>
+<h1 style="text-align: center;">Ubah Barang</h1>
+<form method="post" action="index.php?page=data_barang/edit" enctype="multipart/form-data">
+    <div class="input">
+        <label>Nama Barang</label>
+        <input type="text" name="nama" value="<?php echo htmlspecialchars($data['nama']);?>" required/>
+    </div>
+    <div class="input">
+        <label>Kategori</label>
+        <select name="kategori" required>
+            <option <?php echo is_select($data['kategori'], 'Komputer'); ?> value="Komputer">Komputer</option>
+            <option <?php echo is_select($data['kategori'], 'Elektronik');?> value="Elektronik">Elektronik</option>
+            <option <?php echo is_select($data['kategori'], 'Hand Phone'); ?> value="Hand Phone">Hand Phone</option>
+        </select>
+    </div>
+    <div class="input">
+        <label>Harga Jual</label>
+        <input type="number" name="harga_jual" value="<?php echo htmlspecialchars($data['harga_jual']);?>" required/>
+    </div>
+    <div class="input">
+        <label>Harga Beli</label>
+        <input type="number" name="harga_beli" value="<?php echo htmlspecialchars($data['harga_beli']);?>" required/>
+    </div>
+    <div class="input">
+        <label>Stok</label>
+        <input type="number" name="stok" value="<?php echo htmlspecialchars($data['stok']);?>" required/>
+    </div>
+    <div class="input">
+        <label>File Gambar (Kosongkan jika tidak diubah)</label>
+        <input type="file" name="file_gambar" />
+        <?php if ($data['gambar']): ?>
+            <p>Gambar Saat Ini: 
+                <img src="assets/gambar/<?php echo htmlspecialchars($data['gambar']);?>" style="max-width: 100px; max-height: 100px; display: block; margin-top: 10px;">
+            </p>
+        <?php endif; ?>
+    </div>
+    <div class="submit">
+        <input type="hidden" name="id" value="<?php echo htmlspecialchars($data['id_barang']);?>" />
+        <input type="submit" name="submit" value="Simpan Perubahan" />
+    </div>
+</form>
+```
+
+### 📄 `modules/data_barang/delete.php` (Delete)
+
+```php
+<?php
+// modules/data_barang/delete.php (Menghapus data)
+
+function redirect_list() {
+    header('location: index.php?page=data_barang/list'); 
+    exit;
+}
+
+if (isset($_GET['id'])) {
+    $id = mysqli_real_escape_string($conn, $_GET['id']);
+    
+    $sql = "DELETE FROM data_barang WHERE id_barang = '{$id}'"; // Query DELETE
+    $result = mysqli_query($conn, $sql);
+
+    if (!$result) {
+        die("Gagal menghapus data: " . mysqli_error($conn));
+    }
+}
+
+redirect_list();
+?>
+```
+
+-----
+
+## 5\. Modul Otentikasi Lanjutan (`modules/auth/`)
+
+Selain *Login* dan *Logout*, modul ini memastikan manajemen sesi dilakukan dengan benar. *Router* utama sudah melindungi semua halaman selain Auth, menjadikan *project* lebih aman.
+
+### 🔑 `modules/auth/logout.php`
+
+```php
+<?php
+// modules/auth/logout.php
+
+session_start();
+
+// Hapus semua variabel sesi
+$_SESSION = array();
+
+// Hancurkan sesi
+if (ini_get("session.use_cookies")) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000,
+        $params["path"], $params["domain"],
+        $params["secure"], $params["httponly"]
+    );
+}
+
+session_destroy();
+
+// Arahkan ke halaman login
+header('location: index.php?page=auth/login');
+exit;
+?>
+```
+
+-----
+
 
 ## Screenshot Tampilan Akhir
 

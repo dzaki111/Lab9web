@@ -223,7 +223,7 @@ $title = $title ?? 'Aplikasi Data Barang';
 
 -----
 
-## 📸 Screenshot Tampilan Akhir
+## Screenshot Tampilan Akhir
 
 Berikut adalah tampilan akhir *project* setelah *login* berhasil, menunjukkan *header* biru-putih dan pesan sambutan yang sudah diatur penempatannya.
 

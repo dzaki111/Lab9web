@@ -227,5 +227,9 @@ $title = $title ?? 'Aplikasi Data Barang';
 
 Berikut adalah tampilan akhir *project* setelah *login* berhasil, menunjukkan *header* biru-putih dan pesan sambutan yang sudah diatur penempatannya.
 
+![WhatsApp Image 2025-11-28 at 18 14 34_45816ba7](https://github.com/user-attachments/assets/41a997c3-cd70-4683-a414-574706af215b)
+
+
 ![WhatsApp Image 2025-11-27 at 22 23 12_46d2cd74](https://github.com/user-attachments/assets/2e37d53d-6f47-4a40-8c13-9126f036d6c4)
 
+![WhatsApp Image 2025-11-28 at 18 16 16_d4acd467](https://github.com/user-attachments/assets/c44f5398-5d46-4065-bb10-11304fee3fd3)

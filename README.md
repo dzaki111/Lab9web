@@ -1,9 +1,13 @@
 # Lab9web
+#### Nama   = DZAKI ARIF RAHMAN  
+#### Kelas  = TI.24.A4  
+#### NIM    = 312410312  
+#### Matkul  = Pemograman Web 1 
 
 
-
-*Project* ini mengimplementasikan konsep Modularisasi dan Routing dalam PHP, mengubah struktur program yang sebelumnya terfragmentasi menjadi arsitektur yang terpusat dan terorganisir. Implementasi ini mencakup pemisahan kode koneksi, tampilan (Header/Footer), logika bisnis (Modules), dan penambahan fitur Otentikasi (Login/Logout) untuk melindungi halaman manajemen data. Database yang digunakan adalah **latihan2** pada MySQL.
+Project ini mengimplementasikan konsep Modularisasi dan Routing dalam PHP, mengubah struktur program yang sebelumnya terfragmentasi menjadi arsitektur yang terpusat dan terorganisir. Implementasi ini mencakup pemisahan kode koneksi, tampilan (Header/Footer), logika bisnis (Modules), dan penambahan fitur Otentikasi (Login/Logout) untuk melindungi halaman manajemen data. Database yang digunakan adalah **latihan2** pada MySQL.
 ## Struktur Proyek
+
 ![WhatsApp Image 2025-11-27 at 22 20 50_889eff33](https://github.com/user-attachments/assets/4ba32e89-4ba3-473b-9946-3fa389b0db03)
 
 
